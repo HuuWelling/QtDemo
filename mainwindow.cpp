@@ -1,7 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QTextBlock>
-#include <QTextCursor>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -11,6 +10,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     w = new Form();
     ui->textEdit->installEventFilter(this);
+
+    AtMemberTextObject *atObj = new AtMemberTextObject;
+    ui->textEdit->document()->documentLayout()->registerHandler(AtTextFormat,atObj);
 }
 
 MainWindow::~MainWindow()
@@ -39,8 +41,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     w->keySelectItem(false);
                     return true;
                 }
-                else
-                    return QWidget::eventFilter(watched,event);
             }
             else if(k->key() == Qt::Key_Down)
             {
@@ -49,8 +49,22 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     w->keySelectItem(true);
                     return true;
                 }
-                else
+            }
+            else if(k->key() == Qt::Key_Left)
+            {
+                if(w->isVisible())
+                {
+                    w->close();
                     return QWidget::eventFilter(watched,event);
+                }
+            }
+            else if(k->key() == Qt::Key_Right)
+            {
+                if(w->isVisible())
+                {
+                    w->close();
+                    return QWidget::eventFilter(watched,event);
+                }
             }
             else if(k->key() == Qt::Key_Space)
             {
@@ -59,8 +73,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     w->close();
                     return true;
                 }
-                else
-                    return QWidget::eventFilter(watched,event);
             }
             else if(k->key() == Qt::Key_Return || k->key() == Qt::Key_Enter)
             {
@@ -71,8 +83,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     w->close();
                     return true;
                 }
-                else
-                    return QWidget::eventFilter(watched,event);
             }
             else if(k->key() == Qt::Key_Backspace)
             {
@@ -81,26 +91,21 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     w->close();
                     return true;
                 }
-                else
-                    return QWidget::eventFilter(watched,event);
             }
-            else
-                return QWidget::eventFilter(watched,event);
         }
-        else
-            return QWidget::eventFilter(watched,event);
     }
-    else
-        return QWidget::eventFilter(watched,event);
+    return QWidget::eventFilter(watched,event);
 }
-
 
 void MainWindow::on_textEdit_cursorPositionChanged()
 {
     QTextCursor tc = ui->textEdit->textCursor();
-    QTextBlock tb = tc.block();
-    QString tx = tb.text();
-    if(tx.isEmpty())
+    int selectionStart = tc.selectionStart();   //光标位置
+    QString textBeforeCursor = getTextBeforeCursor();//获取光标前的文本
+//    qDebug()<<textBeforeCursor;
+//    QTextBlock tb = tc.block();
+//    QString tx = tb.text();
+    if(textBeforeCursor.isEmpty())
     {
         if(w->isVisible())
             w->close();
@@ -110,12 +115,15 @@ void MainWindow::on_textEdit_cursorPositionChanged()
     QPoint point = ui->textEdit->mapToGlobal(rect.topLeft());    //转换为全局坐标
     if(w->isVisible())
     {
-        w->setFilter(tx.mid(tx.lastIndexOf("@") + 1));
+        QString filter = textBeforeCursor.mid(
+                    textBeforeCursor.lastIndexOf("@")+1,
+                    selectionStart-textBeforeCursor.lastIndexOf("@"));
+        w->setFilter(filter);
         w->move(point.x(),point.y()-w->height());
     }
     else
     {
-       if(tx.endsWith("@"))
+       if(textBeforeCursor.endsWith("@"))
        {
            w->setFilter("");
            w->setFocus();
@@ -131,11 +139,67 @@ void MainWindow::on_textEdit_cursorPositionChanged()
 
 void MainWindow::receiveName(QString name)
 {
-    while(!ui->textEdit->textCursor().block().text().endsWith("@"))
+//    QString textBeforeCursor = getTextBeforeCursor();
+//    qDebug()<<textBeforeCursor;
+    while(!getTextBeforeCursor().endsWith("@"))
         ui->textEdit->textCursor().deletePreviousChar();
-    if(ui->textEdit->textCursor().block().text().endsWith("@"))
-    ;
+    if(getTextBeforeCursor().endsWith("@"))
+        ui->textEdit->textCursor().deletePreviousChar();
     else
-        ui->textEdit->textCursor().insertText("@");
-    ui->textEdit->textCursor().insertText(name);
+        ;
+//    ui->textEdit->textCursor().insertText(name);
+
+    QTextCharFormat textcharFormat;
+    textcharFormat.setVerticalAlignment(QTextCharFormat::AlignBottom);
+    textcharFormat.setObjectType(AtTextFormat);
+    textcharFormat.setProperty(AtData,QVariant(QString("@%1").arg(name)));
+    textcharFormat.setProperty(AtFont,ui->textEdit->font());
+//    ui->textEdit->mergeCurrentCharFormat(textcharFormat);
+
+    QTextCursor cursor = ui->textEdit->textCursor();
+//    cursor.movePosition(QTextCursor::End);
+    cursor.insertText(QString(QChar::ObjectReplacementCharacter),textcharFormat);
+
+
+//    qDebug()<<ui->textEdit->fontFamily();
+
+//    cursor.insertText("关注我");
+
+//    QString text;
+//    QTextFrame::iterator it;                        //建立QTextFrame的迭代器
+//    for (it = ui->textEdit->document()->rootFrame()->begin(); !(it.atEnd()); ++it) {
+//        QTextBlock childBlock = it.currentBlock();  //获取当前文本块
+//        if(childBlock.isValid())
+//        {
+//            QTextBlock::iterator itb;//文本片段的迭代，通过所在的容器的迭代器
+//            for (itb = childBlock.begin(); !(itb.atEnd()); ++itb) {
+//                QTextFragment currentFragment = itb.fragment();
+//                if (currentFragment.isValid()) {
+//                    if(currentFragment.charFormat().isCharFormat())
+//                    {
+//                        QTextCharFormat formt = currentFragment.charFormat();
+//                        if(formt.objectType() == AtTextFormat)
+//                            text += formt.property(AtData).toString();
+//                        else
+//                            text += currentFragment.text();
+//                    }
+//                }
+//            }
+//            if(!text.isEmpty())
+//                text += '\n';
+//        }
+//    }
+
+    //    ui->textEdit->append(text);
+}
+
+QString MainWindow::getTextBeforeCursor()
+{
+    QTextCursor tc = ui->textEdit->textCursor();
+    int selectionStart = tc.selectionStart();   //光标位置
+    QString textBeforeCursor = ui->textEdit->toPlainText().mid(0, selectionStart);//获取光标前的文本
+    if(!textBeforeCursor.isEmpty())
+        return textBeforeCursor;
+    else
+        return "";
 }

@@ -2,6 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QAbstractTextDocumentLayout>
+#include <QTextFrame>
+#include <QTextCharFormat>
+#include "atmembertextobject.h"
 #include "form.h"
 
 QT_BEGIN_NAMESPACE
@@ -25,6 +32,8 @@ private slots:
     void on_textEdit_cursorPositionChanged();
 
     void receiveName(QString name);
+
+    QString getTextBeforeCursor();
 
 private:
     Ui::MainWindow *ui;
