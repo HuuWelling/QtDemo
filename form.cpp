@@ -7,8 +7,17 @@ Form::Form(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    setWindowFlags(Qt::CustomizeWindowHint|Qt::FramelessWindowHint
-                   |Qt::WindowStaysOnTopHint|Qt::WindowSystemMenuHint);
+    setWindowFlags(Qt::FramelessWindowHint
+                   |Qt::WindowStaysOnTopHint);
+    setAttribute(Qt::WA_TranslucentBackground);     //窗口透明
+
+    //设置投影效果
+    QGraphicsDropShadowEffect *windowShadow;        //阴影效果
+    windowShadow = new QGraphicsDropShadowEffect(this);
+    windowShadow->setBlurRadius(30);
+    windowShadow->setColor(QColor(0, 0, 0));
+    windowShadow->setOffset(0, 0);
+    ui->frame->setGraphicsEffect(windowShadow);
 
     users["hemingqu"] = "何名取";
     users["juejin"] = "掘金";

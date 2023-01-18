@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QMap>
 #include <QKeyEvent>
+#include <QGraphicsDropShadowEffect>
 
 namespace Ui {
 class Form;

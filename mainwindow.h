@@ -2,14 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTextBlock>
-#include <QTextCursor>
-#include <QTextDocument>
-#include <QAbstractTextDocumentLayout>
-#include <QTextFrame>
-#include <QTextCharFormat>
-#include "atmembertextobject.h"
-#include "form.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,20 +16,10 @@ public:
     ~MainWindow();
 
 protected:
-    void closeEvent(QCloseEvent *event);
-
-    bool eventFilter(QObject *watched, QEvent *event);
-
-private slots:
-    void on_textEdit_cursorPositionChanged();
-
-    void receiveName(QString name);
-
-    QString getTextBeforeCursor();
+    void moveEvent(QMoveEvent *e);      //拖动主窗口移动时关闭艾特列表
 
 private:
     Ui::MainWindow *ui;
 
-    Form *w;
 };
 #endif // MAINWINDOW_H
